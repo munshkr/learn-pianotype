@@ -1,0 +1,7 @@
+{
+  "name": "pianotype-trainer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Damián Silvani <munshkr@gmail.com>",
+  "license": "GPL-3.0+"
+}
