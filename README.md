@@ -1,4 +1,4 @@
-# Pianotype trainer
+# Learn Pianotype
 
 Learn and practice your [pianotyping](https://github.com/munshkr/pianotype) skills!
 
