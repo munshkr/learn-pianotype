@@ -53,27 +53,76 @@ function mod(n, m) {
   return ((n % m) + m) % m;
 }
 
-function Home() {
-  const firstNote = MidiNumbers.fromNote("a0");
-  const lastNote = MidiNumbers.fromNote("c8");
+class Home extends React.Component {
+  state = {
+    scale: Scales.major,
+    rootKey: "c4",
+    rootKeyNumber: MidiNumbers.fromNote("c4"),
+    invalidRootKey: false
+  };
 
-  const rootKey = MidiNumbers.fromNote("c4");
-  const scale = Scales.minor;
+  handleScaleChange = e => {
+    this.setState({ scale: Scales[e.target.value] });
+  };
 
-  const keyboardShortcuts = buildMap(rootKey, scale);
-  console.log(keyboardShortcuts);
+  handleRootKeyChange = e => {
+    const { value } = e.target;
+    this.setState({ rootKey: value });
+    if (this.isNoteValid(value)) {
+      this.setState({
+        rootKeyNumber: MidiNumbers.fromNote(value),
+        invalidRootKey: false
+      });
+    } else {
+      this.setState({ invalidRootKey: true });
+    }
+  };
 
-  return (
-    <div>
-      <Piano
-        noteRange={{ first: firstNote, last: lastNote }}
-        playNote={() => {}}
-        stopNote={() => {}}
-        width={1500}
-        keyboardShortcuts={keyboardShortcuts}
-      />
-    </div>
-  );
+  isNoteValid(value) {
+    try {
+      MidiNumbers.fromNote(value);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  render() {
+    const { scale, rootKey, rootKeyNumber, invalidRootKey } = this.state;
+
+    const keyboardShortcuts = buildMap(rootKeyNumber, scale);
+    const firstNote = MidiNumbers.fromNote("a0");
+    const lastNote = MidiNumbers.fromNote("c8");
+
+    return (
+      <div>
+        <div>
+          <label>Scale</label>
+          <select onChange={this.handleScaleChange}>
+            {Object.keys(Scales).map(scale => (
+              <option key={scale} value={scale}>
+                {scale}
+              </option>
+            ))}
+          </select>
+          <label>Root key</label>
+          <input value={rootKey} onChange={this.handleRootKeyChange} />
+          {invalidRootKey && (
+            <span style={{ color: "red" }}>
+              Invalid root key. Examples of valid keys: "c4", "e#5", etc.
+            </span>
+          )}
+        </div>
+        <Piano
+          noteRange={{ first: firstNote, last: lastNote }}
+          playNote={() => {}}
+          stopNote={() => {}}
+          width={1500}
+          keyboardShortcuts={keyboardShortcuts}
+        />
+      </div>
+    );
+  }
 }
 
 export default Home;
