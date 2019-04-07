@@ -1,3 +1,10 @@
+import FormControl from "@material-ui/core/FormControl";
+import InputLabel from "@material-ui/core/InputLabel";
+import MenuItem from "@material-ui/core/MenuItem";
+import Select from "@material-ui/core/Select";
+import { withStyles } from "@material-ui/core/styles";
+import PropTypes from "prop-types";
+import React from "react";
 import { MidiNumbers, Piano } from "react-piano";
 import "react-piano/dist/styles.css";
 
@@ -31,10 +38,13 @@ const keys = [
   "q"
 ];
 
+const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const OCTAVES = [3, 4, 5, 6];
+
 // TODO Import from pianotype
 const Scales = {
-  major: [0, 2, 4, 5, 7, 9, 11],
-  minor: [0, 2, 3, 5, 7, 8, 10]
+  major: { name: "Major", values: [0, 2, 4, 5, 7, 9, 11] },
+  minor: { name: "Minor", values: [0, 2, 3, 5, 7, 8, 10] }
 };
 
 // TODO Import from pianotype
@@ -53,66 +63,92 @@ function mod(n, m) {
   return ((n % m) + m) % m;
 }
 
+const styles = theme => ({
+  root: {
+    display: "flex",
+    flexWrap: "wrap"
+  },
+  formControl: {
+    margin: theme.spacing.unit,
+    minWidth: 120
+  }
+});
+
+const SelectControl = withStyles(styles)(
+  ({ classes, name, label, options, value, onChange }) => (
+    <FormControl className={classes.formControl}>
+      <InputLabel htmlFor={name}>{label}</InputLabel>
+      <Select
+        value={value}
+        onChange={onChange}
+        inputProps={{
+          name: name,
+          id: name
+        }}
+      >
+        {options.map(opts => (
+          <MenuItem key={opts.key || opts} value={opts.key || opts}>
+            {opts.value || opts}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  )
+);
+
 class Home extends React.Component {
   state = {
-    scale: Scales.major,
-    rootKey: "c4",
-    rootKeyNumber: MidiNumbers.fromNote("c4"),
-    invalidRootKey: false
+    scale: "major",
+    octave: 4,
+    rootNote: "C"
   };
 
-  handleScaleChange = e => {
-    this.setState({ scale: Scales[e.target.value] });
+  handleInputChange = e => {
+    this.setState({ [e.target.name]: e.target.value });
   };
-
-  handleRootKeyChange = e => {
-    const { value } = e.target;
-    this.setState({ rootKey: value });
-    if (this.isNoteValid(value)) {
-      this.setState({
-        rootKeyNumber: MidiNumbers.fromNote(value),
-        invalidRootKey: false
-      });
-    } else {
-      this.setState({ invalidRootKey: true });
-    }
-  };
-
-  isNoteValid(value) {
-    try {
-      MidiNumbers.fromNote(value);
-      return true;
-    } catch (err) {
-      return false;
-    }
-  }
 
   render() {
-    const { scale, rootKey, rootKeyNumber, invalidRootKey } = this.state;
+    const { classes } = this.props;
+    const { scale, octave, rootNote } = this.state;
 
-    const keyboardShortcuts = buildMap(rootKeyNumber, scale);
-    const firstNote = MidiNumbers.fromNote("a0");
-    const lastNote = MidiNumbers.fromNote("c8");
+    const scaleValues = Scales[scale].values;
+    const rootKey = MidiNumbers.fromNote(`${rootNote}${octave}`);
+    const keyboardShortcuts = buildMap(rootKey, scaleValues);
+
+    const firstNote = rootKey - 25;
+    const lastNote = rootKey + 21;
 
     return (
       <div>
         <div>
-          <label>Scale</label>
-          <select onChange={this.handleScaleChange}>
-            {Object.keys(Scales).map(scale => (
-              <option key={scale} value={scale}>
-                {scale}
-              </option>
-            ))}
-          </select>
-          <label>Root key</label>
-          <input value={rootKey} onChange={this.handleRootKeyChange} />
-          {invalidRootKey && (
-            <span style={{ color: "red" }}>
-              Invalid root key. Examples of valid keys: "c4", "e#5", etc.
-            </span>
-          )}
+          <form className={classes.root} autoComplete="off">
+            <SelectControl
+              name="scale"
+              label="Scale"
+              options={Object.keys(Scales).map(key => ({
+                key: key,
+                value: Scales[key].name
+              }))}
+              value={scale}
+              onChange={this.handleInputChange}
+            />
+            <SelectControl
+              name="octave"
+              label="Octave"
+              options={OCTAVES}
+              value={octave}
+              onChange={this.handleInputChange}
+            />
+            <SelectControl
+              name="rootNote"
+              label="Root Note"
+              options={NOTES}
+              value={rootNote}
+              onChange={this.handleInputChange}
+            />
+          </form>
         </div>
+
         <Piano
           noteRange={{ first: firstNote, last: lastNote }}
           playNote={() => {}}
@@ -125,4 +161,8 @@ class Home extends React.Component {
   }
 }
 
-export default Home;
+Home.propTypes = {
+  classes: PropTypes.object.isRequired
+};
+
+export default withStyles(styles)(Home);
